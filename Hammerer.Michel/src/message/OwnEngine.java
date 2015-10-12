@@ -10,7 +10,10 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Map;
 
 import messages.engine.AcceptCallback;
 import messages.engine.Channel;
@@ -21,26 +24,21 @@ import messages.engine.Server;
 
 public class OwnEngine extends Engine{
 	
-	InetAddress m_localhost;
 	Selector m_selector;
-	SocketChannel m_ch;
-	SelectionKey m_key;
+	Map<SelectionKey, Channel> listKey= new HashMap<SelectionKey, Channel>();
+	SelectionKey m_sk;
 	int m_port;
 	// Automata to write message
 	WriteAutomata writeAutomata;
-	Channel channel;
 	// Automata to read message
 	ReadAutomata readAutomata;
 	// The message to send to the server
-	String msg;
+	String msg="tesrgqfvrssrgrgrqgrqggzrZRGSAAst";
 	
-	
-	public OwnEngine(int port) throws IOException {
-		 m_port = port;
-		 m_localhost = InetAddress.getByName("localhost");
+	public OwnEngine() throws IOException {
 		 m_selector = SelectorProvider.provider().openSelector();
 	}
-	
+
 	public void mainloop() {
 		System.out.println("NioClient running");
 		while (true) {
@@ -88,18 +86,12 @@ public class OwnEngine extends Engine{
 			key.cancel();
 			return;
 		}
-		key.interestOps(SelectionKey.OP_READ);
-		writeAutomata= new WriteAutomata(socketChannel);
-		readAutomata= new ReadAutomata(socketChannel);
-		// when connected, send a message to the server 
-		send(msg.getBytes());
 		
-	}
-
-	private void send(byte[] bytes) {
-		writeAutomata.write(bytes);
-		SelectionKey key =m_ch.keyFor(m_selector);
+		// when connected, send a message to the server 
+		Channel channel = listKey.get(key);
+		channel.send(msg.getBytes(), 0, msg.getBytes().length);
 		key.interestOps(SelectionKey.OP_WRITE);
+		
 	}
 
 	private void handleWrite(SelectionKey key) {
@@ -116,7 +108,7 @@ public class OwnEngine extends Engine{
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 	    int nbread = 0;
 	    try {
-	    	readAutomata.handleRead();
+	    	msg=readAutomata.handleRead();
 	    } catch (IOException e) {
 	      // the connection as been closed unexpectedly, cancel the selection and close the channel
 	      key.cancel();
@@ -139,8 +131,11 @@ public class OwnEngine extends Engine{
 	      key.cancel();
 	      return;
 	    }
-	    System.out.println("Client: " +msg);
-	    send(msg.getBytes());
+	    if(msg != null){
+	    	System.out.println("Client: " +msg);
+	    	Channel channel = listKey.get(key);
+			channel.send(msg.getBytes(), 0, msg.getBytes().length);
+	    }
 		
 	}
 
@@ -150,6 +145,7 @@ public class OwnEngine extends Engine{
 		try {
 			socketChannel = serverSocketChannel.accept();
 			socketChannel.configureBlocking(false);
+			
 		} catch (IOException e) {
 			// as if there was no accept done
 			return;
@@ -157,10 +153,13 @@ public class OwnEngine extends Engine{
 
 		// be notified when there is incoming data 
 		try {
-			socketChannel.register(this.m_selector, SelectionKey.OP_READ);
+			SelectionKey m_key = socketChannel.register(this.m_selector, SelectionKey.OP_READ);
+			Channel channel = new ChannelTest(socketChannel);
+			listKey.put(m_key, channel);
 		} catch (ClosedChannelException e) {
 			handleClose(socketChannel);
 		}
+		
 		
 	}
 
@@ -176,24 +175,28 @@ public class OwnEngine extends Engine{
 
 	public Server listen(int port, AcceptCallback callback) throws IOException {
 		ServerTest server = new ServerTest(port);
-		callback.accepted(server, channel);
+		m_sk = server.getSocket().register(m_selector, SelectionKey.OP_ACCEPT);
+		//callback.accepted(server, channel);
 		return server;
 	}
 
 	public void connect(InetAddress hostAddress, int port,
 			ConnectCallback callback) throws UnknownHostException,
 			SecurityException, IOException {
+		SocketChannel m_ch;
 		m_ch = SocketChannel.open();
 	    m_ch.configureBlocking(false);
 	    m_ch.socket().setTcpNoDelay(true);
-
+	    
+	    SelectionKey m_key;
 	    // be notified when the connection to the server will be accepted
 	    m_key = m_ch.register(m_selector, SelectionKey.OP_CONNECT);
-
+	    
 	    // request to connect to the server
 	    m_ch.connect(new InetSocketAddress(hostAddress, port));
+	    Channel channel = new ChannelTest(m_ch);
+	    listKey.put(m_key, channel);
 	    callback.connected(channel);
-		
 	}
 
 }

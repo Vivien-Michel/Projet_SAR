@@ -1,11 +1,24 @@
 package message;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 
 import messages.engine.Channel;
 import messages.engine.DeliverCallback;
 
 public class ChannelTest extends Channel {
+	
+	SocketChannel m_ch;
+	ReadAutomata readAutomata;
+	WriteAutomata writeAutomata;
+	
+	public ChannelTest(SocketChannel m_ch) {
+		this.m_ch = m_ch;
+		readAutomata = new ReadAutomata(m_ch);
+		writeAutomata = new WriteAutomata(m_ch);
+	}
 
 	@Override
 	public void setDeliverCallback(DeliverCallback callback) {
@@ -15,19 +28,28 @@ public class ChannelTest extends Channel {
 
 	@Override
 	public InetSocketAddress getRemoteAddress() {
-		// TODO Auto-generated method stub
+		try {
+			return (InetSocketAddress) m_ch.getRemoteAddress();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return null;
 	}
 
 	@Override
 	public void send(byte[] bytes, int offset, int length) {
-		// TODO Auto-generated method stub
-
+		writeAutomata.write(bytes);
 	}
 
 	@Override
 	public void close() {
-		// TODO Auto-generated method stub
+		try {
+			m_ch.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 

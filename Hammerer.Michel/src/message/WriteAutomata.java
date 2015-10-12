@@ -21,6 +21,10 @@ public class WriteAutomata {
 		this.sock = socketChannel;
 	}
 
+	public SocketChannel getSock() {
+		return sock;
+	}
+
 	public void write(byte[] data) {
 		messages.add(ByteBuffer.wrap(data));
 	}
