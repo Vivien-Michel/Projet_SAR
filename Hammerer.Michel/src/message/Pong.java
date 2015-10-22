@@ -1,7 +1,6 @@
 package message;
 
 import java.io.IOException;
-import java.net.InetAddress;
 
 import messages.engine.Engine;
 import messages.engine.Server;

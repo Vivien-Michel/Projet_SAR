@@ -11,7 +11,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -26,21 +25,14 @@ public class OwnEngine extends Engine{
 	
 	Selector m_selector;
 	Map<SelectionKey, Channel> listKey= new HashMap<SelectionKey, Channel>();
-	SelectionKey m_sk;
-	int m_port;
-	// Automata to write message
-	WriteAutomata writeAutomata;
-	// Automata to read message
-	ReadAutomata readAutomata;
 	// The message to send to the server
-	String msg="tesrgqfvrssrgrgrqgrqggzrZRGSAAst";
+	byte[] msg="0".getBytes();
 	
 	public OwnEngine() throws IOException {
 		 m_selector = SelectorProvider.provider().openSelector();
 	}
 
 	public void mainloop() {
-		System.out.println("NioClient running");
 		while (true) {
 			try {
 				m_selector.select();
@@ -77,7 +69,6 @@ public class OwnEngine extends Engine{
 
 	private void handleConnect(SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-
 		try {
 			socketChannel.finishConnect();
 		} catch (IOException e) {
@@ -86,29 +77,28 @@ public class OwnEngine extends Engine{
 			key.cancel();
 			return;
 		}
-		
 		// when connected, send a message to the server 
 		Channel channel = listKey.get(key);
-		channel.send(msg.getBytes(), 0, msg.getBytes().length);
-		key.interestOps(SelectionKey.OP_WRITE);
-		
+		channel.send(msg, 0, msg.length);
+		key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 	}
 
 	private void handleWrite(SelectionKey key) {
+		Channel channel = listKey.get(key);
 		try {
-			writeAutomata.handleWrite();			
+			((ChannelTest) channel).getWriteAutomata().handleWrite();			
 		} catch (IOException e) {
 		// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		key.interestOps(SelectionKey.OP_READ);
 	}
 
 	private void handleRead(SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 	    int nbread = 0;
+	    Channel channel = listKey.get(key);
 	    try {
-	    	msg=readAutomata.handleRead();
+	    	msg=((ChannelTest) channel).getReadAutomata().handleRead();
 	    } catch (IOException e) {
 	      // the connection as been closed unexpectedly, cancel the selection and close the channel
 	      key.cancel();
@@ -132,9 +122,9 @@ public class OwnEngine extends Engine{
 	      return;
 	    }
 	    if(msg != null){
-	    	System.out.println("Client: " +msg);
-	    	Channel channel = listKey.get(key);
-			channel.send(msg.getBytes(), 0, msg.getBytes().length);
+	    	((ChannelTest) channel).getCallback().deliver(channel, msg);
+	    	msg = String.valueOf(Integer.valueOf(new String(msg))+1).getBytes();
+			channel.send(msg, 0, msg.length);
 	    }
 		
 	}
@@ -150,11 +140,11 @@ public class OwnEngine extends Engine{
 			// as if there was no accept done
 			return;
 		}
-
 		// be notified when there is incoming data 
 		try {
-			SelectionKey m_key = socketChannel.register(this.m_selector, SelectionKey.OP_READ);
+			SelectionKey m_key = socketChannel.register(this.m_selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 			Channel channel = new ChannelTest(socketChannel);
+			channel.setDeliverCallback(new DeliverCallbackTest());
 			listKey.put(m_key, channel);
 		} catch (ClosedChannelException e) {
 			handleClose(socketChannel);
@@ -175,8 +165,9 @@ public class OwnEngine extends Engine{
 
 	public Server listen(int port, AcceptCallback callback) throws IOException {
 		ServerTest server = new ServerTest(port);
-		m_sk = server.getSocket().register(m_selector, SelectionKey.OP_ACCEPT);
-		//callback.accepted(server, channel);
+		server.getSocket().register(m_selector, SelectionKey.OP_ACCEPT);
+		Channel channel = new ChannelTest(null);
+		callback.accepted(server, channel);
 		return server;
 	}
 
@@ -195,6 +186,7 @@ public class OwnEngine extends Engine{
 	    // request to connect to the server
 	    m_ch.connect(new InetSocketAddress(hostAddress, port));
 	    Channel channel = new ChannelTest(m_ch);
+	    channel.setDeliverCallback(new DeliverCallbackTest());
 	    listKey.put(m_key, channel);
 	    callback.connected(channel);
 	}

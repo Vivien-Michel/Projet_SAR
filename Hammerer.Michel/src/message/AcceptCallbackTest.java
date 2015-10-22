@@ -7,12 +7,12 @@ import messages.engine.Server;
 public class AcceptCallbackTest implements AcceptCallback {
 
 	public void accepted(Server server, Channel channel) {
-		// TODO Auto-generated method stub
+		System.out.println("Ecoute sur le port : " +server.getPort()+ " pour le channel "+channel.toString());
 
 	}
 
 	public void closed(Channel channel) {
-		// TODO Auto-generated method stub
+		channel.close();
 	}
 
 }

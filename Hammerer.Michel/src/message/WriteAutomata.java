@@ -25,28 +25,29 @@ public class WriteAutomata {
 		return sock;
 	}
 
-	public void write(byte[] data) {
+	public void write(byte[] data, int offset, int length) {
 		messages.add(ByteBuffer.wrap(data));
 	}
 
 	public void handleWrite() throws IOException {
-
-		if (currentState == WRITING_LENGTH) {
-			msgBuf = messages.get(0);
-			lenBuf.position(0);
-			lenBuf=lenBuf.putInt(0,msgBuf.remaining());
-			sock.write(lenBuf);
-			if (lenBuf.remaining() == 0) {
-				currentState = WRITING_MSG;
+		if(!messages.isEmpty()){
+			if (currentState == WRITING_LENGTH) {
+				msgBuf = messages.get(0);
+				lenBuf.position(0);
+				lenBuf=lenBuf.putInt(0,msgBuf.remaining());
+				sock.write(lenBuf);
+				if (lenBuf.remaining() == 0) {
+					currentState = WRITING_MSG;
+				}
 			}
-		}
-		if (currentState == WRITING_MSG) {
-			if (msgBuf.remaining() > 0) {
-				sock.write(msgBuf);
-			}
-			if (msgBuf.remaining() == 0) { // the message has been fully sent"
-				msgBuf = messages.remove(0);
-				currentState = WRITING_LENGTH;
+			if (currentState == WRITING_MSG) {
+				if (msgBuf.remaining() > 0) {
+					sock.write(msgBuf);
+				}
+				if (msgBuf.remaining() == 0) { // the message has been fully sent"
+					msgBuf = messages.remove(0);
+					currentState = WRITING_LENGTH;
+				}
 			}
 		}
 	}

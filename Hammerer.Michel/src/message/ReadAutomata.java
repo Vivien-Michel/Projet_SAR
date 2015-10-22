@@ -21,7 +21,7 @@ public class ReadAutomata {
 		this.sock=socketChannel;
 	}
 	
-	public String handleRead() throws IOException {
+	public byte[] handleRead() throws IOException {
 		
 		if (state == READING_LENGTH){
 			int nbread = sock.read(lenBuf);
@@ -40,7 +40,7 @@ public class ReadAutomata {
 			sock.read(msgBuf);
 			if (msgBuf.remaining() == 0){ // the message has been fully received
 				  // deliver it"
-				String msg =new String(msgBuf.array());
+				byte[] msg =msgBuf.array();
 				msgBuf = null;
 				state = READING_LENGTH;
 				return msg;

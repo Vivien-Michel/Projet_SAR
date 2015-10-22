@@ -6,8 +6,8 @@ import messages.engine.DeliverCallback;
 public class DeliverCallbackTest implements DeliverCallback {
 
 	public void deliver(Channel channel, byte[] bytes) {
-		// TODO Auto-generated method stub
-
+		String msg=new String(bytes);
+		System.out.println("Message : "+msg +" on channel " + channel.toString());
 	}
 
 }
