@@ -26,7 +26,7 @@ public class WriteAutomata {
 	}
 
 	public void write(byte[] data, int offset, int length) {
-		messages.add(ByteBuffer.wrap(data));
+		messages.add(ByteBuffer.wrap(data, offset, length));
 	}
 
 	public void handleWrite() throws IOException {
