@@ -37,7 +37,7 @@ public class OwnEngine extends Engine implements Runnable{
 	public OwnEngine() throws IOException {
 		 m_selector = SelectorProvider.provider().openSelector();
 	}
-
+	//Boucle pour NIO, redirige vers l'action suivant la clé
 	public void mainloop() {
 		while (true) {
 			try {
@@ -72,7 +72,7 @@ public class OwnEngine extends Engine implements Runnable{
 		}
 		
 	}
-
+	//Utilisé quand la connexion est acceptée
 	private void handleConnect(SelectionKey key) {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		try {
@@ -82,7 +82,7 @@ public class OwnEngine extends Engine implements Runnable{
 			key.cancel();
 			return;
 		}
-		// when connected, send a message to the server 
+		//Callback avertissant de la connection
 		Channel channel = listKey.get(key);
 		connectCallback.connected(channel);
 		//channel.send(msg, 0, msg.length);
@@ -124,6 +124,7 @@ public class OwnEngine extends Engine implements Runnable{
 	      key.cancel();
 	      return;
 	    }
+	    //Si le message est non null c'est qu'il a été lu entièrement
 	    if(msg != null){
 	    	((ChannelTest) channel).getCallback().deliver(channel, msg);
 	    	//msg = String.valueOf(Integer.valueOf(new String(msg))+1).getBytes();
@@ -145,8 +146,10 @@ public class OwnEngine extends Engine implements Runnable{
 		// be notified when there is incoming data 
 		try {
 			SelectionKey m_key = socketChannel.register(this.m_selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+			//Création du channel
 			Channel channel = new ChannelTest(socketChannel);
 			channel.setDeliverCallback(new DeliverCallbackTest());
+			//Callback d'acceptation
 			Server server = mapServer.get(key);
 			acceptCallback.accepted(server, channel);
 			listKey.put(m_key, channel);
@@ -168,9 +171,11 @@ public class OwnEngine extends Engine implements Runnable{
 	}
 
 	public Server listen(int port, AcceptCallback callback) throws IOException {
+		//Création de la socketserveur dans le constructeur
 		ServerTest server = new ServerTest(port);
 		SelectionKey key = server.getSocket().register(m_selector, SelectionKey.OP_ACCEPT);
 		acceptCallback=callback;
+		//Pour retrouver le serveur lors de l'appel du callback d'acceptation
 		mapServer.put(key,server);
 		return server;
 	}
@@ -179,6 +184,7 @@ public class OwnEngine extends Engine implements Runnable{
 		ConnectCallback callback) throws UnknownHostException,
 		SecurityException, IOException {
 		SocketChannel m_ch;
+		//Création de la socket de connexion
 		m_ch = SocketChannel.open();
 	    m_ch.configureBlocking(false);
 	    m_ch.socket().setTcpNoDelay(true);
@@ -198,7 +204,8 @@ public class OwnEngine extends Engine implements Runnable{
 	public void run() {
 		mainloop();
 	}
-
+	
+	//Use to send to every member of group
 	public void send(String msg, int offset, int length) {
 		for(Entry<SelectionKey, Channel> mapEntry : listKey.entrySet()){
 			Channel channel = mapEntry.getValue();

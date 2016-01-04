@@ -37,6 +37,8 @@ public class TestConnectionBurst {
 				port++;
 				clients.add(client);
 			}
+			//Utilisation d'un timer pour être sur que toutes les connexions sont faites
+			//TODO Use the connect callback
 			try {
 				Thread.sleep(2000);
 			} catch (InterruptedException e) {
