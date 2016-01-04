@@ -25,6 +25,7 @@ public class OwnEngine extends Engine{
 	
 	private Selector m_selector;
 	private Map<SelectionKey, Channel> listKey= new HashMap<SelectionKey, Channel>();
+	private Map<SelectionKey, Server> mapServer = new HashMap<SelectionKey, Server>();
 	
 	// The message to send to the server
 	private byte[] msg="0".getBytes();
@@ -145,7 +146,8 @@ public class OwnEngine extends Engine{
 			SelectionKey m_key = socketChannel.register(this.m_selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 			Channel channel = new ChannelTest(socketChannel);
 			channel.setDeliverCallback(new DeliverCallbackTest());
-			acceptCallback.accepted(null, channel);
+			Server server = mapServer.get(key);
+			acceptCallback.accepted(server, channel);
 			listKey.put(m_key, channel);
 		} catch (ClosedChannelException e) {
 			handleClose(socketChannel);
@@ -166,10 +168,9 @@ public class OwnEngine extends Engine{
 
 	public Server listen(int port, AcceptCallback callback) throws IOException {
 		ServerTest server = new ServerTest(port);
-		server.getSocket().register(m_selector, SelectionKey.OP_ACCEPT);
-		Channel channel = new ChannelTest(null);
+		SelectionKey key = server.getSocket().register(m_selector, SelectionKey.OP_ACCEPT);
 		acceptCallback=callback;
-		acceptCallback.accepted(server, channel);
+		mapServer.put(key,server);
 		return server;
 	}
 
