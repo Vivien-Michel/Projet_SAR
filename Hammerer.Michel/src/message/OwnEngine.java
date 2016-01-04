@@ -13,6 +13,7 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import messages.engine.AcceptCallback;
 import messages.engine.Channel;
@@ -21,7 +22,7 @@ import messages.engine.Engine;
 import messages.engine.Server;
 
 
-public class OwnEngine extends Engine{
+public class OwnEngine extends Engine implements Runnable{
 	
 	private Selector m_selector;
 	private Map<SelectionKey, Channel> listKey= new HashMap<SelectionKey, Channel>();
@@ -84,7 +85,7 @@ public class OwnEngine extends Engine{
 		// when connected, send a message to the server 
 		Channel channel = listKey.get(key);
 		connectCallback.connected(channel);
-		channel.send(msg, 0, msg.length);
+		//channel.send(msg, 0, msg.length);
 		key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 	}
 
@@ -125,8 +126,8 @@ public class OwnEngine extends Engine{
 	    }
 	    if(msg != null){
 	    	((ChannelTest) channel).getCallback().deliver(channel, msg);
-	    	msg = String.valueOf(Integer.valueOf(new String(msg))+1).getBytes();
-			channel.send(msg, 0, msg.length);
+	    	//msg = String.valueOf(Integer.valueOf(new String(msg))+1).getBytes();
+			//channel.send(msg, 0, msg.length);
 	    }
 		
 	}
@@ -192,6 +193,18 @@ public class OwnEngine extends Engine{
 	    channel.setDeliverCallback(new DeliverCallbackTest());
 	    listKey.put(m_key, channel);
 	    connectCallback=callback;
+	}
+
+	public void run() {
+		mainloop();
+	}
+
+	public void send(String msg, int offset, int length) {
+		for(Entry<SelectionKey, Channel> mapEntry : listKey.entrySet()){
+			Channel channel = mapEntry.getValue();
+			channel.send(msg.getBytes(), offset, length);
+		}
+		
 	}
 
 }

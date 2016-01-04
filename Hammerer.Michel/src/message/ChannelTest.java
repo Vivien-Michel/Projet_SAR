@@ -42,7 +42,6 @@ public class ChannelTest extends Channel {
 		try {
 			return (InetSocketAddress) m_ch.getRemoteAddress();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;

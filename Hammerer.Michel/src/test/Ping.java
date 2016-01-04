@@ -1,9 +1,10 @@
-package message;
+package test;
 
 import java.io.IOException;
-
 import java.net.InetAddress;
 
+import message.ConnectCallbackTest;
+import message.OwnEngine;
 import messages.engine.Engine;
 
 public class Ping{
@@ -15,7 +16,6 @@ public class Ping{
 			ping.connect(InetAddress.getByName("localhost"), port, new ConnectCallbackTest());
 			ping.startEcho();
 			ping.mainloop();
-			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -4,11 +4,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.List;
 
 public class WriteAutomata {
 
 	SocketChannel sock;
-	ArrayList<ByteBuffer> messages = new ArrayList<ByteBuffer>(); // messages to
+	List<ByteBuffer> messages = new ArrayList<ByteBuffer>(); // messages to
 																	// send"
 	ByteBuffer lenBuf = ByteBuffer.allocate(4); // for writing the length of a
 												// message"
@@ -34,8 +35,10 @@ public class WriteAutomata {
 			if (currentState == WRITING_LENGTH) {
 				msgBuf = messages.get(0);
 				lenBuf.position(0);
-				lenBuf=lenBuf.putInt(0,msgBuf.remaining());
-				sock.write(lenBuf);
+				if(msgBuf!=null){
+					lenBuf=lenBuf.putInt(0,msgBuf.remaining());
+					sock.write(lenBuf);
+				}
 				if (lenBuf.remaining() == 0) {
 					currentState = WRITING_MSG;
 				}
