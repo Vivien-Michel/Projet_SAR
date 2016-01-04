@@ -11,8 +11,7 @@ public class ConnectCallbackTest implements ConnectCallback{
 	}
 
 	public void connected(Channel channel) {
-		
-		System.out.println("Demande connexion sur le channel : "+ channel.toString());
+		System.out.println("Connexion sur le channel : "+ channel.toString());
 	}
 
 }

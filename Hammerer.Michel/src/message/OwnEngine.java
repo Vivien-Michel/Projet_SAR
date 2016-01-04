@@ -23,10 +23,14 @@ import messages.engine.Server;
 
 public class OwnEngine extends Engine{
 	
-	Selector m_selector;
-	Map<SelectionKey, Channel> listKey= new HashMap<SelectionKey, Channel>();
+	private Selector m_selector;
+	private Map<SelectionKey, Channel> listKey= new HashMap<SelectionKey, Channel>();
+	
 	// The message to send to the server
-	byte[] msg="0".getBytes();
+	private byte[] msg="0".getBytes();
+	
+	private ConnectCallback connectCallback;
+	private AcceptCallback acceptCallback;
 	
 	public OwnEngine() throws IOException {
 		 m_selector = SelectorProvider.provider().openSelector();
@@ -72,13 +76,13 @@ public class OwnEngine extends Engine{
 		try {
 			socketChannel.finishConnect();
 		} catch (IOException e) {
-			// cancel the channel's registration with our selector
-			System.out.println(e);
+			e.printStackTrace();
 			key.cancel();
 			return;
 		}
 		// when connected, send a message to the server 
 		Channel channel = listKey.get(key);
+		connectCallback.connected(channel);
 		channel.send(msg, 0, msg.length);
 		key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 	}
@@ -88,7 +92,6 @@ public class OwnEngine extends Engine{
 		try {
 			((ChannelTest) channel).getWriteAutomata().handleWrite();			
 		} catch (IOException e) {
-		// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -105,7 +108,6 @@ public class OwnEngine extends Engine{
 	      try {
 			socketChannel.close();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 	      return;
@@ -115,7 +117,6 @@ public class OwnEngine extends Engine{
 	      try {
 			key.channel().close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	      key.cancel();
@@ -135,7 +136,6 @@ public class OwnEngine extends Engine{
 		try {
 			socketChannel = serverSocketChannel.accept();
 			socketChannel.configureBlocking(false);
-			
 		} catch (IOException e) {
 			// as if there was no accept done
 			return;
@@ -145,6 +145,7 @@ public class OwnEngine extends Engine{
 			SelectionKey m_key = socketChannel.register(this.m_selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 			Channel channel = new ChannelTest(socketChannel);
 			channel.setDeliverCallback(new DeliverCallbackTest());
+			acceptCallback.accepted(null, channel);
 			listKey.put(m_key, channel);
 		} catch (ClosedChannelException e) {
 			handleClose(socketChannel);
@@ -167,13 +168,14 @@ public class OwnEngine extends Engine{
 		ServerTest server = new ServerTest(port);
 		server.getSocket().register(m_selector, SelectionKey.OP_ACCEPT);
 		Channel channel = new ChannelTest(null);
-		callback.accepted(server, channel);
+		acceptCallback=callback;
+		acceptCallback.accepted(server, channel);
 		return server;
 	}
 
 	public void connect(InetAddress hostAddress, int port,
-			ConnectCallback callback) throws UnknownHostException,
-			SecurityException, IOException {
+		ConnectCallback callback) throws UnknownHostException,
+		SecurityException, IOException {
 		SocketChannel m_ch;
 		m_ch = SocketChannel.open();
 	    m_ch.configureBlocking(false);
@@ -188,7 +190,7 @@ public class OwnEngine extends Engine{
 	    Channel channel = new ChannelTest(m_ch);
 	    channel.setDeliverCallback(new DeliverCallbackTest());
 	    listKey.put(m_key, channel);
-	    callback.connected(channel);
+	    connectCallback=callback;
 	}
 
 }

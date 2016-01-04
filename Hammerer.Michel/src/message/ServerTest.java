@@ -33,7 +33,6 @@ public class ServerTest extends Server {
 	}
 
 	public ServerSocketChannel getSocket() {
-		// TODO Auto-generated method stub
 		return m_sch;
 	}
 	

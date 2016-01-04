@@ -7,7 +7,7 @@ import messages.engine.Server;
 public class AcceptCallbackTest implements AcceptCallback {
 
 	public void accepted(Server server, Channel channel) {
-		System.out.println("Ecoute sur le port : " +server.getPort()+ " pour le channel "+channel.toString());
+		System.out.println("Acceptation connexion sur le port : " +server.getPort()+ " pour le channel "+channel.toString());
 
 	}
 

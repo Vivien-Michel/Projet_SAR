@@ -58,7 +58,6 @@ public class ChannelTest extends Channel {
 		try {
 			m_ch.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
